@@ -14,30 +14,37 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { theme } from "./colors";
 import { Fontisto } from "@expo/vector-icons";
 
-const STORAGE_KEY = "@toDos";
+const STORAGE_TODOS = "@toDos";
+const STORAGE_LOCATION = "@location";
 
 export default function App() {
   const [working, setWorking] = useState(true);
   const [text, setText] = useState("");
   const [toDos, setToDos] = useState({});
   const [loading, setLoading] = useState(true);
-  useEffect(() => {
+  useEffect(async () => {
+    const str = await AsyncStorage.getItem(STORAGE_LOCATION);
+    console.log(JSON.parse(str));
+    setWorking(JSON.parse(str));
     loadToDos();
   }, []);
+  useEffect(() => {
+    AsyncStorage.setItem(STORAGE_LOCATION, JSON.stringify(working));
+  }, [working]);
   const travel = () => setWorking(false);
   const work = () => setWorking(true);
   const onChangeText = (payload) => setText(payload);
   const saveToDos = async (toSave) => {
     try {
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+      await AsyncStorage.setItem(STORAGE_TODOS, JSON.stringify(toSave));
     } catch (e) {
       console.log(e);
     }
   };
   const loadToDos = async () => {
     try {
-      const s = await AsyncStorage.getItem(STORAGE_KEY);
-      setToDos(JSON.parse(s));
+      const str = await AsyncStorage.getItem(STORAGE_TODOS);
+      setToDos(JSON.parse(str));
       setLoading(false);
     } catch (e) {
       console.log(e);
@@ -98,7 +105,9 @@ export default function App() {
         value={text}
         onSubmitEditing={addToDo}
         returnKeyType="done"
-        placeholder={working ? "Add a To Do" : "Where do you want to go?"}
+        placeholder={
+          working ? "What do you have to do?" : "What do you want to do?"
+        }
         style={styles.input}
       />
       {loading ? (
