@@ -22,9 +22,10 @@ export default function App() {
   const [text, setText] = useState("");
   const [toDos, setToDos] = useState({});
   const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState("");
+  const [editedText, setEditedText] = useState("");
   useEffect(async () => {
     const str = await AsyncStorage.getItem(STORAGE_LOCATION);
-    console.log(JSON.parse(str));
     setWorking(JSON.parse(str));
     loadToDos();
   }, []);
@@ -55,7 +56,10 @@ export default function App() {
     if (text === "") {
       return;
     }
-    const newToDos = { ...toDos, [Date.now()]: { text, working } };
+    const newToDos = {
+      ...toDos,
+      [Date.now()]: { text, working, completed: false },
+    };
     setToDos(newToDos);
     await saveToDos(newToDos);
     setText("");
@@ -75,6 +79,22 @@ export default function App() {
       },
     ]);
   };
+  const completeToDo = async (id) => {
+    const newToDos = { ...toDos };
+    const completed = toDos[id].completed;
+    newToDos[id].completed = !completed;
+    setToDos(newToDos);
+    await saveToDos(newToDos);
+  };
+  const onChangeEditedText = async (payload) => setEditedText(payload);
+  const editToDo = async (id) => {
+    const newToDos = { ...toDos };
+    newToDos[id].text = editedText;
+    setToDos(newToDos);
+    await saveToDos(newToDos);
+    setEditing("");
+  };
+  console.log(toDos);
   return (
     <View style={styles.container}>
       <StatusBar style="auto" />
@@ -119,12 +139,68 @@ export default function App() {
       ) : (
         <ScrollView>
           {Object.keys(toDos).map((key) =>
-            toDos[key].working === working ? (
+            toDos[key].working === working && !toDos[key].completed ? (
+              <TouchableOpacity
+                onPress={() => {
+                  setEditing(key + "");
+                  setEditedText(toDos[key].text + "");
+                }}
+                key={key}
+              >
+                {editing !== key + "" && (
+                  <View
+                    style={{ ...styles.toDo, backgroundColor: theme.gray }}
+                    key={key}
+                  >
+                    <Text style={{ ...styles.toDoText, color: theme.white }}>
+                      {toDos[key].text}
+                    </Text>
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        width: "30%",
+                        justifyContent: "space-around",
+                      }}
+                    >
+                      <TouchableOpacity onPress={() => completeToDo(key)}>
+                        <Fontisto name="check" size={18} color={theme.white} />
+                      </TouchableOpacity>
+                      <TouchableOpacity onPress={() => deleteToDo(key)}>
+                        <Fontisto name="trash" size={18} color={theme.white} />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                )}
+                {editing === key + "" && (
+                  <TextInput
+                    onChangeText={onChangeEditedText}
+                    value={editedText}
+                    onSubmitEditing={() => editToDo(key)}
+                    returnKeyType="done"
+                    placeholder={toDos[key].text}
+                    style={styles.input}
+                  />
+                )}
+              </TouchableOpacity>
+            ) : null
+          )}
+          {Object.keys(toDos).map((key) =>
+            toDos[key].working === working && toDos[key].completed ? (
               <View style={styles.toDo} key={key}>
-                <Text style={styles.toDoText}>{toDos[key].text}</Text>
-                <TouchableOpacity onPress={() => deleteToDo(key)}>
-                  <Fontisto name="trash" size={18} color={theme.lightGray} />
-                </TouchableOpacity>
+                <Fontisto
+                  name="checkbox-active"
+                  size={18}
+                  color={theme.green}
+                />
+                <Text
+                  style={{
+                    ...styles.toDoText,
+                    color: theme.lightGray,
+                    textDecorationLine: "line-through",
+                  }}
+                >
+                  {toDos[key].text}
+                </Text>
               </View>
             ) : null
           )}
@@ -158,7 +234,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
   },
   toDo: {
-    backgroundColor: theme.gray,
     marginBottom: 10,
     paddingVertical: 20,
     paddingHorizontal: 20,
@@ -168,7 +243,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   toDoText: {
-    color: theme.white,
     fontSize: 16,
     fontWeight: "500",
   },
