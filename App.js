@@ -9,6 +9,7 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  Animated,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { theme } from "./colors";
@@ -24,6 +25,8 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState("");
   const [editedText, setEditedText] = useState("");
+  const [progress, setProgress] = useState(0);
+
   useEffect(async () => {
     const str = await AsyncStorage.getItem(STORAGE_LOCATION);
     setWorking(JSON.parse(str));
@@ -32,14 +35,25 @@ export default function App() {
   useEffect(() => {
     AsyncStorage.setItem(STORAGE_LOCATION, JSON.stringify(working));
   }, [working]);
+  useEffect(() => {
+    countProgress();
+  }, [toDos, working]);
   const travel = () => setWorking(false);
   const work = () => setWorking(true);
   const onChangeText = (payload) => setText(payload);
-  const saveToDos = async (toSave) => {
-    try {
-      await AsyncStorage.setItem(STORAGE_TODOS, JSON.stringify(toSave));
-    } catch (e) {
-      console.log(e);
+  const countProgress = () => {
+    if (working) {
+      const totalWorkingArr = Object.values(toDos).filter((val) => val.working);
+      const totalWorking = totalWorkingArr.length;
+      const completed = totalWorkingArr.filter((arr) => arr.completed);
+      const percentage = Math.round((completed.length / totalWorking) * 100);
+      setProgress(percentage);
+    } else {
+      const totalTravelArr = Object.values(toDos).filter((val) => !val.working);
+      const totalTravel = totalTravelArr.length;
+      const completed = totalTravelArr.filter((arr) => arr.completed);
+      const percentage = Math.round((completed.length / totalTravel) * 100);
+      setProgress(percentage);
     }
   };
   const loadToDos = async () => {
@@ -51,7 +65,13 @@ export default function App() {
       console.log(e);
     }
   };
-
+  const saveToDos = async (toSave) => {
+    try {
+      await AsyncStorage.setItem(STORAGE_TODOS, JSON.stringify(toSave));
+    } catch (e) {
+      console.log(e);
+    }
+  };
   const addToDo = async () => {
     if (text === "") {
       return;
@@ -94,7 +114,6 @@ export default function App() {
     await saveToDos(newToDos);
     setEditing("");
   };
-  console.log(toDos);
   return (
     <View style={styles.container}>
       <StatusBar style="auto" />
@@ -119,6 +138,18 @@ export default function App() {
             Travel
           </Text>
         </TouchableOpacity>
+      </View>
+      <View style={styles.progressbarContainer}>
+        <View
+          accessibilityRole="progressbar"
+          accessibilityValue={{ min: 0, max: 100, now: 40 }}
+          style={styles.progressbar}
+        >
+          <Animated.View
+            style={{ ...styles.innerProgress, width: `${progress}%` }}
+          />
+        </View>
+        <Text style={styles.progressbarText}>{`${progress}%`}</Text>
       </View>
       <TextInput
         onChangeText={onChangeText}
@@ -245,5 +276,28 @@ const styles = StyleSheet.create({
   toDoText: {
     fontSize: 16,
     fontWeight: "500",
+  },
+  progressbarContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  progressbar: {
+    height: 10,
+    width: "80%",
+    backgroundColor: theme.gray,
+    marginVertical: 20,
+    borderColor: theme.gray,
+    borderRadius: 5,
+  },
+  progressbarText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: theme.white,
+    marginLeft: 20,
+  },
+  innerProgress: {
+    backgroundColor: "green",
+    height: 10,
+    borderRadius: 5,
   },
 });
