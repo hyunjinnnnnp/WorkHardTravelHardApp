@@ -9,7 +9,6 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
-  Animated,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { theme } from "./colors";
@@ -140,14 +139,8 @@ export default function App() {
         </TouchableOpacity>
       </View>
       <View style={styles.progressbarContainer}>
-        <View
-          accessibilityRole="progressbar"
-          accessibilityValue={{ min: 0, max: 100, now: 40 }}
-          style={styles.progressbar}
-        >
-          <Animated.View
-            style={{ ...styles.innerProgress, width: `${progress}%` }}
-          />
+        <View style={styles.progressbar}>
+          <View style={{ ...styles.innerProgress, width: `${progress}%` }} />
         </View>
         <Text style={styles.progressbarText}>{`${progress}%`}</Text>
       </View>
@@ -186,20 +179,9 @@ export default function App() {
                     <Text style={{ ...styles.toDoText, color: theme.white }}>
                       {toDos[key].text}
                     </Text>
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        width: "30%",
-                        justifyContent: "space-around",
-                      }}
-                    >
-                      <TouchableOpacity onPress={() => completeToDo(key)}>
-                        <Fontisto name="check" size={18} color={theme.white} />
-                      </TouchableOpacity>
-                      <TouchableOpacity onPress={() => deleteToDo(key)}>
-                        <Fontisto name="trash" size={18} color={theme.white} />
-                      </TouchableOpacity>
-                    </View>
+                    <TouchableOpacity onPress={() => completeToDo(key)}>
+                      <Fontisto name="check" size={18} color={theme.white} />
+                    </TouchableOpacity>
                   </View>
                 )}
                 {editing === key + "" && (
@@ -218,20 +200,26 @@ export default function App() {
           {Object.keys(toDos).map((key) =>
             toDos[key].working === working && toDos[key].completed ? (
               <View style={styles.toDo} key={key}>
-                <Fontisto
-                  name="checkbox-active"
-                  size={18}
-                  color={theme.green}
-                />
-                <Text
-                  style={{
-                    ...styles.toDoText,
-                    color: theme.lightGray,
-                    textDecorationLine: "line-through",
-                  }}
-                >
-                  {toDos[key].text}
-                </Text>
+                <View style={{ flexDirection: "row" }}>
+                  <Fontisto
+                    name="checkbox-active"
+                    size={18}
+                    color={theme.green}
+                  />
+                  <Text
+                    style={{
+                      ...styles.toDoText,
+                      color: theme.lightGray,
+                      textDecorationLine: "line-through",
+                      marginLeft: 10,
+                    }}
+                  >
+                    {toDos[key].text}
+                  </Text>
+                </View>
+                <TouchableOpacity onPress={() => deleteToDo(key)}>
+                  <Fontisto name="trash" size={18} color={theme.white} />
+                </TouchableOpacity>
               </View>
             ) : null
           )}
