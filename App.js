@@ -9,6 +9,7 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  Platform,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { theme } from "./colors";
@@ -28,7 +29,9 @@ export default function App() {
 
   useEffect(async () => {
     const str = await AsyncStorage.getItem(STORAGE_LOCATION);
-    setWorking(JSON.parse(str));
+    if (str) {
+      setWorking(JSON.parse(str));
+    }
     loadToDos();
   }, []);
   useEffect(() => {
@@ -58,7 +61,9 @@ export default function App() {
   const loadToDos = async () => {
     try {
       const str = await AsyncStorage.getItem(STORAGE_TODOS);
-      setToDos(JSON.parse(str));
+      if (str) {
+        setToDos(JSON.parse(str));
+      }
       setLoading(false);
     } catch (e) {
       console.log(e);
@@ -84,19 +89,29 @@ export default function App() {
     setText("");
   };
   const deleteToDo = (id) => {
-    Alert.alert("Delete To Do", "Are you sure?", [
-      { text: "Cancel" },
-      {
-        text: "I'm Sure",
-        style: "destructive", //ios only
-        onPress: async () => {
-          const newToDos = { ...toDos };
-          delete newToDos[id];
-          setToDos(newToDos);
-          await saveToDos(newToDos);
+    if (Platform.OS === "web") {
+      const ok = confirm("Do you want to delete this todo?");
+      if (ok) {
+        const newToDos = { ...toDos };
+        delete newToDos[id];
+        setToDos(newToDos);
+        saveToDos(newToDos);
+      }
+    } else {
+      Alert.alert("Delete To Do", "Are you sure?", [
+        { text: "Cancel" },
+        {
+          text: "I'm Sure",
+          style: "destructive", //ios only
+          onPress: async () => {
+            const newToDos = { ...toDos };
+            delete newToDos[id];
+            setToDos(newToDos);
+            await saveToDos(newToDos);
+          },
         },
-      },
-    ]);
+      ]);
+    }
   };
   const completeToDo = async (id) => {
     const newToDos = { ...toDos };
